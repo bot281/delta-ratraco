@@ -37,6 +37,18 @@ def read_sheet(service, sheet_name: str, range_str: str = '') -> pd.DataFrame:
 def write_sheet(service, sheet_name: str, start_cell: str,
                 data: list, clear_first: bool = True):
     """Ghi list of lists vào sheet"""
+    import math
+    # Clean NaN/Inf values (JSON doesn't support them)
+    clean_data = []
+    for row in data:
+        clean_row = []
+        for cell in row:
+            if isinstance(cell, float) and (math.isnan(cell) or math.isinf(cell)):
+                clean_row.append(0)
+            else:
+                clean_row.append(cell)
+        clean_data.append(clean_row)
+
     rng = f"'{sheet_name}'!{start_cell}"
     if clear_first:
         service.values().clear(
@@ -46,6 +58,6 @@ def write_sheet(service, sheet_name: str, start_cell: str,
         spreadsheetId=SHEET_ID,
         range=rng,
         valueInputOption='USER_ENTERED',
-        body={'values': data}
+        body={'values': clean_data}
     ).execute()
-    print(f"  ✓ Đã ghi {len(data)} dòng → {sheet_name}!{start_cell}")
+    print(f"  ✓ Đã ghi {len(clean_data)} dòng → {sheet_name}!{start_cell}")
