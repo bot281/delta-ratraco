@@ -5,7 +5,7 @@
 
 // ===== CONFIG =====
 // URL này sẽ được cập nhật sau khi deploy Apps Script
-const GAS_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzNHBYiWFBmu7gJ85lhM_g3JL9ZxvrB1pxwctPlYEr35_Z0W_Edp3rvWjVbO28fN0xfIg/exec';
 
 // ===== DANH MỤC =====
 let DANH_MUC = {};
