@@ -85,11 +85,27 @@ function initForm() {
     this.value = this.value.toUpperCase();
   });
 
-  // Load trip theo MTC
+  // Load / generate trip theo MTC
   document.getElementById('loadTripBtn').addEventListener('click', loadTripByMTC);
+  document.getElementById('genMtcBtn').addEventListener('click', () => suggestNextMTC(true));
+  suggestNextMTC(false);
 
   // Submit
   document.getElementById('slForm').addEventListener('submit', handleSubmit);
+  document.getElementById('slForm').addEventListener('reset', () => setTimeout(() => suggestNextMTC(false), 0));
+}
+
+async function suggestNextMTC(force = false) {
+  const current = val('mtc');
+  if (current && !force) return;
+  try {
+    const resp = await fetch(`${GAS_URL}?action=next_mtc`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (data?.mtc) document.getElementById('mtc').value = data.mtc;
+  } catch (_) {
+    // ignore
+  }
 }
 
 async function loadTripByMTC() {
@@ -153,7 +169,8 @@ async function handleSubmit(e) {
     saveToLocalHistory(payload);
     renderRecentList();
 
-    showStatus(`✅ Đã lưu trip MTC ${payload.mtc}: ${payload.noi_di} → ${payload.noi_den}`, 'success');
+    showStatus(`✅ Đã lưu trip MTC ${payload.mtc || '(auto)'}: ${payload.noi_di} → ${payload.noi_den}`, 'success');
+    suggestNextMTC(true);
   } catch (err) {
     showStatus(`❌ Lỗi kết nối: ${err.message}. Dữ liệu đã lưu tạm cục bộ.`, 'error');
     saveToLocalHistory(payload);
@@ -196,7 +213,7 @@ function collectFormData() {
 
 // ===== VALIDATION =====
 function validateForm() {
-  const required = ['date','khu_vuc','xe','lai_xe','container','mtc','noi_di','noi_den','loai_hang','nghiep_vu','job_id','cuoc','phan_loai'];
+  const required = ['date','khu_vuc','xe','lai_xe','container','noi_di','noi_den','loai_hang','nghiep_vu','job_id','cuoc','phan_loai'];
   let ok = true;
 
   required.forEach(id => {

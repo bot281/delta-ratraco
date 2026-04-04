@@ -41,6 +41,7 @@ function doGet(e) {
   if (action === 'ping') return json({ status: 'ok' });
   if (action === 'recent') return getRecentRows();
   if (action === 'config') return json({ status: 'ok', danh_muc: getConfigDanhMuc() });
+  if (action === 'next_mtc') return json({ status: 'ok', mtc: generateNextMTC() });
   if (action === 'trip') return getTripByMTC(e?.parameter?.mtc || '');
   return ContentService.createTextOutput('Delta Ratraco API').setMimeType(ContentService.MimeType.TEXT);
 }
@@ -53,8 +54,11 @@ function json(obj) {
 
 // ===== TRIP UPSERT THEO MTC =====
 function upsertTripByMTC(data) {
-  const mtc = String(data.mtc || '').trim();
-  if (!mtc) throw new Error('MTC là bắt buộc');
+  let mtc = String(data.mtc || '').trim();
+  if (!mtc) {
+    mtc = generateNextMTC();
+    data.mtc = mtc;
+  }
 
   const sheet = getSheet(SL_SHEET);
   const incoming = buildRowData(data);
@@ -120,6 +124,39 @@ function findRowByMTC(sheet, mtc) {
     }
   }
   return null;
+}
+
+function generateNextMTC() {
+  const sheet = getSheet(SL_SHEET);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 5) return 'RTC01';
+
+  const values = sheet.getRange(5, 8, lastRow - 4, 1).getValues().flat().map(v => String(v || '').trim()).filter(Boolean);
+  const stats = {};
+
+  values.forEach(v => {
+    const m = v.match(/^([A-Za-z]+)(\d+)$/);
+    if (!m) return;
+    const prefix = m[1].toUpperCase();
+    const num = Number(m[2]);
+    const width = m[2].length;
+    if (!stats[prefix]) stats[prefix] = { count: 0, max: 0, width: width };
+    stats[prefix].count += 1;
+    if (num > stats[prefix].max) stats[prefix].max = num;
+    if (width > stats[prefix].width) stats[prefix].width = width;
+  });
+
+  if (!Object.keys(stats).length) return 'RTC01';
+
+  const sorted = Object.entries(stats).sort((a, b) => {
+    if (b[1].count !== a[1].count) return b[1].count - a[1].count;
+    return b[1].max - a[1].max;
+  });
+
+  const [prefix, info] = sorted[0];
+  const nextNum = info.max + 1;
+  const numText = String(nextNum).padStart(info.width, '0');
+  return `${prefix}${numText}`;
 }
 
 function getTripByMTC(mtc) {

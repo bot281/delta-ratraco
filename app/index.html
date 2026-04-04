@@ -55,14 +55,17 @@
                    placeholder="VD: RATU1000807" required
                    style="text-transform:uppercase" />
           </div>
-          <div class="form-group required">
+          <div class="form-group">
             <label>MTC (mã trip)</label>
             <div class="inline-actions">
               <input type="text" id="mtc" name="mtc"
-                     placeholder="VD: RTC01" required />
+                     placeholder="Tự sinh nếu để trống" />
               <button type="button" class="btn-mini" id="loadTripBtn">🔎 Gọi trip</button>
             </div>
-            <small class="hint">Nhập lại MTC để bổ sung/chỉnh sửa trip cũ</small>
+            <div class="inline-actions" style="margin-top:6px;grid-template-columns:1fr auto;">
+              <small class="hint">Trip mới: để trống MTC hoặc bấm Tạo MTC</small>
+              <button type="button" class="btn-mini" id="genMtcBtn">✨ Tạo MTC</button>
+            </div>
           </div>
         </div>
 
