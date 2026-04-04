@@ -1,0 +1,43 @@
+{
+  "khu_vuc": ["Đông Anh", "Sóng Thần", "Trảng Bom", "Bình Minh", "Cây Cầy", "KA"],
+  "xe": [
+    "15C-263.16","15C-263.69","15C-265.60","15C-300.89","15C-312.15",
+    "15C-313.95","15C-322.59","15H-031.33","15H-054.17","15H-112.83",
+    "29C-105.06","29C-448.52","29C-578.88","29C-579.12","29C-579.15",
+    "29E-103.24","29E-104.07","29E-104.45","29E-105.06","29E-352.27",
+    "29E-353.52","29E-354.32","29E-429.53","29E-469.14","29E-469.49",
+    "29H-984.14","50E-152.31","50E-322.32","50E-525.73","51H-717.39",
+    "61C-145.49","61C-248.95"
+  ],
+  "lai_xe": [
+    "Huỳnh Ngọc Sang","Lê Công Trinh","Lê Quang Hoàng",
+    "Nguyễn Cao Thăng","Nguyễn Duy Khánh","Nguyễn Phương Đông",
+    "Nguyễn Sơn Bình","Nguyễn Thiện Phẩm","Nguyễn Tiến Nam",
+    "Nguyễn Văn Cường","Nguyễn Văn Hành","Nguyễn Văn Luật",
+    "Nguyễn Văn Toàn","Nhữ Văn Mạnh","Phạm Việt Lâm",
+    "Vũ Thanh Phong","Vũ Văn Ngọc"
+  ],
+  "nghiep_vu": ["Đóng hàng","Trả hàng","Kết hợp","Tăng bo"],
+  "phan_loai": ["Chở hàng","Chuyển vỏ"],
+  "loai_hang": [
+    "Sữa","Bia","Bánh kẹo","Bột giặt","Bột mỳ","Bột mastic","Bột đá",
+    "Dầu nhớt","Dầu thực vật","Giấy","Gỗ","Hạt nhựa","Hoá chất",
+    "Hàng điện tử","Linh kiện","Nhôm","Nhựa","Nước ngọt",
+    "Phụ gia","Sơn","Thép","Thực phẩm","Thực phẩm lạnh",
+    "Thiết bị y tế","Vải","Ván gỗ","Xe máy","Đường","Khác"
+  ],
+  "noi_di": [
+    "Ga Đông Anh","Bãi vỏ container Đông Anh","Ga Sóng Thần",
+    "Ga Trảng Bom","Ga Cây Cầy","ICD Sóng Thần",
+    "KCN Quang Minh","KCN Bắc Thăng Long","KCN Từ Liêm",
+    "KCN Sông Công","Tiên Sơn","Yên Phong","Từ Sơn","Mỹ Hào",
+    "Ba Vì","NM Sữa Ba Vì","Giáp Bát","Ngọc Hồi","Khác"
+  ],
+  "noi_den": [
+    "Ga Đông Anh","Bãi ga Đông Anh","Ga Sóng Thần","Ga Trảng Bom",
+    "ICD Sóng Thần","KCN Quang Minh","KCN Bắc Thăng Long",
+    "KCN Từ Liêm","KCN Sông Công","Tiên Sơn","Yên Phong",
+    "Từ Sơn","Mỹ Hào","Ba Vì","NM Sữa Ba Vì","Ngọc Hồi",
+    "TP Hải Phòng","TP Bắc Giang","Tp Thanh Hóa","Khác"
+  ]
+}

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delta Ratraco — Nhập Shipment List</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="logo">🚚 Delta Ratraco</div>
+    <div class="user-info" id="userInfo">Chưa đăng nhập</div>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>📋 Nhập chuyến vận chuyển mới</h2>
+      <form id="slForm" novalidate>
+
+        <!-- ROW 1: Ngày + Khu vực -->
+        <div class="form-row">
+          <div class="form-group required">
+            <label>Ngày vận hành</label>
+            <input type="date" id="date" name="date" required />
+          </div>
+          <div class="form-group required">
+            <label>Khu vực</label>
+            <select id="khu_vuc" name="khu_vuc" required>
+              <option value="">— Chọn khu vực —</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ROW 2: Xe + Lái xe -->
+        <div class="form-row">
+          <div class="form-group required">
+            <label>Xe thực hiện</label>
+            <select id="xe" name="xe" required>
+              <option value="">— Chọn xe —</option>
+            </select>
+          </div>
+          <div class="form-group required">
+            <label>Lái xe</label>
+            <select id="lai_xe" name="lai_xe" required>
+              <option value="">— Chọn lái xe —</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ROW 3: Số Container + MTC -->
+        <div class="form-row">
+          <div class="form-group required">
+            <label>Số Container</label>
+            <input type="text" id="container" name="container"
+                   placeholder="VD: RATU1000807" required
+                   style="text-transform:uppercase" />
+          </div>
+          <div class="form-group required">
+            <label>MTC</label>
+            <input type="text" id="mtc" name="mtc"
+                   placeholder="VD: RTC01" required />
+          </div>
+        </div>
+
+        <!-- ROW 4: Nơi đi + Nơi đến -->
+        <div class="form-row">
+          <div class="form-group required">
+            <label>Nơi đi</label>
+            <select id="noi_di" name="noi_di" required>
+              <option value="">— Chọn nơi đi —</option>
+            </select>
+          </div>
+          <div class="form-group required">
+            <label>Nơi đến</label>
+            <select id="noi_den" name="noi_den" required>
+              <option value="">— Chọn nơi đến —</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ROW 5: Loại hàng + Nghiệp vụ -->
+        <div class="form-row">
+          <div class="form-group required">
+            <label>Loại hàng</label>
+            <select id="loai_hang" name="loai_hang" required>
+              <option value="">— Chọn loại hàng —</option>
+            </select>
+          </div>
+          <div class="form-group required">
+            <label>Nghiệp vụ</label>
+            <select id="nghiep_vu" name="nghiep_vu" required>
+              <option value="">— Chọn nghiệp vụ —</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ROW 6: JOB ID + Lệnh VC -->
+        <div class="form-row">
+          <div class="form-group required">
+            <label>JOB ID</label>
+            <input type="text" id="job_id" name="job_id"
+                   placeholder="VD: SVT25030138800015" required />
+          </div>
+          <div class="form-group">
+            <label>Lệnh VC</label>
+            <input type="text" id="lenh_vc" name="lenh_vc"
+                   placeholder="VD: FCL-20250327155216057" />
+          </div>
+        </div>
+
+        <!-- ROW 7: Cước + Phụ phí -->
+        <div class="form-row">
+          <div class="form-group required">
+            <label>Cước vận chuyển (VNĐ)</label>
+            <input type="number" id="cuoc" name="cuoc"
+                   placeholder="0" min="0" step="1000" required />
+          </div>
+          <div class="form-group">
+            <label>Phụ phí (VNĐ)</label>
+            <input type="number" id="phu_phi" name="phu_phi"
+                   placeholder="0" min="0" step="1000" />
+          </div>
+        </div>
+
+        <!-- ROW 8: Phân loại + Delta/NCC -->
+        <div class="form-row">
+          <div class="form-group required">
+            <label>Phân loại</label>
+            <select id="phan_loai" name="phan_loai" required>
+              <option value="">— Chọn —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Delta / NCC</label>
+            <input type="text" id="delta_ncc" name="delta_ncc"
+                   placeholder="VD: LogisValley" />
+          </div>
+        </div>
+
+        <!-- ROW 9: Tháng HD + Ghi chú -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tháng hóa đơn</label>
+            <input type="number" id="thang_hd" name="thang_hd"
+                   min="1" max="12" placeholder="(mặc định = tháng VH)" />
+          </div>
+          <div class="form-group">
+            <label>Ghi chú</label>
+            <input type="text" id="ghi_chu" name="ghi_chu"
+                   placeholder="Ghi chú thêm nếu có" />
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" id="submitBtn">
+            ✅ Lưu chuyến vận chuyển
+          </button>
+          <button type="reset" class="btn-secondary">🔄 Nhập lại</button>
+        </div>
+
+        <div id="statusMsg" class="status-msg hidden"></div>
+      </form>
+    </div>
+
+    <!-- Lịch sử nhập gần nhất -->
+    <div class="card">
+      <h2>📜 Chuyến vừa nhập (hôm nay)</h2>
+      <div id="recentList" class="recent-list">
+        <p class="empty-text">Chưa có dữ liệu hôm nay...</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
