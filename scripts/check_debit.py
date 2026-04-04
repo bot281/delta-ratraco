@@ -117,10 +117,12 @@ def main():
     print(f"  ✅ Khớp : {n_ok} chuyến")
     print(f"  ⚠️ Lệch : {n_err} chuyến")
 
-    if n_err > 0:
-        print("\n⚠️ Các chuyến lệch:")
-        lech = df_result[df_result['Check'] != '✅ Khớp'][['job_id','xe','dt_sl','dt_bc01','chenh_lech']]
-        print(lech.to_string(index=False))
+    if n_err > 0 and n_err <= 20:
+        print("\n⚠️ Các chuyến lệch (hiển thị tối đa 20):")
+        lech = df_result[df_result['Check'] != '✅ Khớp'][['JOB ID','Xe','Doanh thu SL','DT BC01','Chênh lệch']]
+        print(lech.head(20).to_string(index=False))
+    elif n_err > 20:
+        print(f"\n⚠️ Có {n_err} chuyến lệch (quá nhiều để hiển thị)")
 
     print("\n✅ Xong Check debit!")
 
