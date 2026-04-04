@@ -84,6 +84,28 @@ input, select, textarea {
   transition: border-color 0.2s, box-shadow 0.2s;
   width: 100%;
 }
+
+.inline-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+.btn-mini {
+  border: 1px solid #2d6a9f;
+  background: #eef6ff;
+  color: #1e3a5f;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.hint {
+  color: #667;
+  font-size: 0.78rem;
+}
 input:focus, select:focus {
   outline: none;
   border-color: #2d6a9f;

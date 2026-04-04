@@ -1,111 +1,205 @@
 /**
  * Google Apps Script — Backend nhận dữ liệu từ Web App
  * Deploy as: Web App → Execute as: Me → Access: Anyone
- *
- * SHEET_ID: 1dQrANVJ6GABaRyhXkJrCreB1w3T8hjzIm3cqjl40hgY
  */
 
 const SHEET_ID = '1dQrANVJ6GABaRyhXkJrCreB1w3T8hjzIm3cqjl40hgY';
 const SL_SHEET = 'SL';
+const CONFIG_SHEET = 'APP_CONFIG';
 
-// ===== NHẬN DỮ LIỆU TỪ WEB APP =====
+const SL_HEADERS = [
+  'nam','thang_vh','kl','khu_vuc','date','xe','container','mtc',
+  'delta_ncc','cong_ty','loai_hang','noi_di','noi_den','nghiep_vu',
+  'cuoc','phu_phi','ghi_chu','job_id','lenh_vc','lai_xe',
+  'thang_hd','ghi_chu_nb','phan_loai','nam_hd'
+];
+
+const DEFAULT_DANH_MUC = {
+  khu_vuc: ['Đông Anh','Sóng Thần','Trảng Bom','Bình Minh','Cây Cầy','KA'],
+  xe: ['29H-984.14','15C-263.69','29E-104.07'],
+  lai_xe: ['Vũ Văn Ngọc','Nguyễn Tiến Nam'],
+  nghiep_vu: ['Đóng hàng','Trả hàng','Kết hợp','Tăng bo'],
+  phan_loai: ['Chở hàng','Chuyển vỏ'],
+  loai_hang: ['Sữa','Bia','Giấy','Thực phẩm','Khác'],
+  noi_di: ['Ga Đông Anh','Tiên Sơn','Yên Phong','Khác'],
+  noi_den: ['Bãi ga Đông Anh','ICD Sóng Thần','Yên Phong','Khác']
+};
+
+// ===== ROUTING =====
 function doPost(e) {
   try {
-    const data = JSON.parse(e.postData.contents);
-    const result = appendToSL(data);
-    return ContentService
-      .createTextOutput(JSON.stringify({ status: 'ok', row: result }))
-      .setMimeType(ContentService.MimeType.JSON);
+    const data = JSON.parse(e.postData.contents || '{}');
+    const result = upsertTripByMTC(data);
+    return json({ status: 'ok', ...result });
   } catch (err) {
-    return ContentService
-      .createTextOutput(JSON.stringify({ status: 'error', message: err.message }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return json({ status: 'error', message: err.message });
   }
 }
 
-// CORS preflight
 function doGet(e) {
-  if (e.parameter.action === 'ping') {
-    return ContentService
-      .createTextOutput(JSON.stringify({ status: 'ok' }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-  // Trả về dữ liệu gần nhất nếu cần
-  if (e.parameter.action === 'recent') {
-    return getRecentRows();
-  }
+  const action = e?.parameter?.action || '';
+  if (action === 'ping') return json({ status: 'ok' });
+  if (action === 'recent') return getRecentRows();
+  if (action === 'config') return json({ status: 'ok', danh_muc: getConfigDanhMuc() });
+  if (action === 'trip') return getTripByMTC(e?.parameter?.mtc || '');
+  return ContentService.createTextOutput('Delta Ratraco API').setMimeType(ContentService.MimeType.TEXT);
+}
+
+function json(obj) {
   return ContentService
-    .createTextOutput('Delta Ratraco API')
-    .setMimeType(ContentService.MimeType.TEXT);
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
-// ===== GHI VÀO SHEET SL =====
-function appendToSL(data) {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  const sheet = ss.getSheetByName(SL_SHEET);
+// ===== TRIP UPSERT THEO MTC =====
+function upsertTripByMTC(data) {
+  const mtc = String(data.mtc || '').trim();
+  if (!mtc) throw new Error('MTC là bắt buộc');
 
-  // Thứ tự cột theo SL (row 4 = header thực):
-  // A=Năm, B=Tháng VH, C=KL, D=Khu vực, E=Date, F=Xe, G=Container,
-  // H=MTC, I=Delta/NCC, J=Công ty, K=Loại hàng, L=Nơi đi, M=Nơi đến,
-  // N=Nghiệp vụ, O=Cước, P=Phụ phí, Q=Ghi chú, R=JOB ID,
-  // S=Lệnh VC, T=Lái xe, U=Tháng HD, V=Ghi chú NB, W=Phân loại, X=Năm HD
+  const sheet = getSheet(SL_SHEET);
+  const incoming = buildRowData(data);
+  const foundRow = findRowByMTC(sheet, mtc);
 
-  const row = [
-    data.nam,
-    data.thang_vh,
-    1,                    // KL luôn = 1 (1 chuyến)
-    data.khu_vuc,
-    data.date,            // dd/mm/yyyy
-    data.xe,
-    data.container,
-    data.mtc,
-    data.delta_ncc || '',
-    '',                   // Công ty (để trống, map sau)
-    data.loai_hang,
-    data.noi_di,
-    data.noi_den,
-    data.nghiep_vu,
-    data.cuoc,
-    data.phu_phi || 0,
-    data.ghi_chu || '',
-    data.job_id,
-    data.lenh_vc || '',
-    data.lai_xe,
-    data.thang_hd,
-    '',                   // Ghi chú nội bộ
-    data.phan_loai,
-    data.nam_hd,
+  if (foundRow) {
+    const oldRow = sheet.getRange(foundRow, 1, 1, 24).getValues()[0];
+    const merged = mergeRow(oldRow, incoming);
+    sheet.getRange(foundRow, 1, 1, 24).setValues([merged]);
+    return { action: 'updated', row: foundRow, mtc };
+  }
+
+  sheet.appendRow(incoming);
+  return { action: 'created', row: sheet.getLastRow(), mtc };
+}
+
+function buildRowData(data) {
+  return [
+    safe(data.nam),
+    safe(data.thang_vh),
+    1,
+    safe(data.khu_vuc),
+    safe(data.date),
+    safe(data.xe),
+    safe(data.container),
+    safe(data.mtc),
+    safe(data.delta_ncc),
+    '',
+    safe(data.loai_hang),
+    safe(data.noi_di),
+    safe(data.noi_den),
+    safe(data.nghiep_vu),
+    safe(data.cuoc),
+    safe(data.phu_phi),
+    safe(data.ghi_chu),
+    safe(data.job_id),
+    safe(data.lenh_vc),
+    safe(data.lai_xe),
+    safe(data.thang_hd),
+    '',
+    safe(data.phan_loai),
+    safe(data.nam_hd),
   ];
-
-  sheet.appendRow(row);
-  return sheet.getLastRow();
 }
 
-// ===== LẤY DỮ LIỆU GẦN NHẤT =====
-function getRecentRows() {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  const sheet = ss.getSheetByName(SL_SHEET);
+function mergeRow(oldRow, newRow) {
+  const keepBlankColumns = [8, 10, 15, 16, 18, 21]; // các cột cho phép rỗng
+  return oldRow.map((oldVal, idx) => {
+    const n = newRow[idx];
+    if (n === null || n === undefined) return oldVal;
+    if (`${n}`.trim() === '' && !keepBlankColumns.includes(idx)) return oldVal;
+    return n;
+  });
+}
+
+function findRowByMTC(sheet, mtc) {
   const lastRow = sheet.getLastRow();
-  const startRow = Math.max(5, lastRow - 19); // Lấy 20 dòng cuối
+  if (lastRow < 5) return null;
+  const values = sheet.getRange(5, 8, lastRow - 4, 1).getValues(); // col H = MTC
+  for (let i = values.length - 1; i >= 0; i--) {
+    if (String(values[i][0] || '').trim().toUpperCase() === mtc.toUpperCase()) {
+      return i + 5;
+    }
+  }
+  return null;
+}
+
+function getTripByMTC(mtc) {
+  const query = String(mtc || '').trim();
+  if (!query) return json({ status: 'ok', found: false });
+
+  const sheet = getSheet(SL_SHEET);
+  const rowNum = findRowByMTC(sheet, query);
+  if (!rowNum) return json({ status: 'ok', found: false, mtc: query });
+
+  const row = sheet.getRange(rowNum, 1, 1, 24).getValues()[0];
+  const trip = Object.fromEntries(SL_HEADERS.map((h, i) => [h, row[i]]));
+  return json({ status: 'ok', found: true, row: rowNum, trip });
+}
+
+// ===== APP CONFIG =====
+function getConfigDanhMuc() {
+  const sheet = ensureConfigSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return DEFAULT_DANH_MUC;
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+  const result = {};
+
+  rows.forEach(r => {
+    const key = String(r[0] || '').trim();
+    const value = String(r[1] || '').trim();
+    const active = String(r[2] || 'TRUE').toUpperCase() !== 'FALSE';
+    if (!key || !value || !active) return;
+    if (!result[key]) result[key] = [];
+    result[key].push(value);
+  });
+
+  // fallback key nào thiếu
+  Object.keys(DEFAULT_DANH_MUC).forEach(k => {
+    if (!result[k] || result[k].length === 0) result[k] = DEFAULT_DANH_MUC[k];
+  });
+
+  return result;
+}
+
+function ensureConfigSheet() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let sheet = ss.getSheetByName(CONFIG_SHEET);
+  if (sheet) return sheet;
+
+  sheet = ss.insertSheet(CONFIG_SHEET);
+  sheet.getRange(1, 1, 1, 5).setValues([['field_key', 'option_value', 'is_active', 'sort_order', 'note']]);
+
+  const rows = [];
+  Object.keys(DEFAULT_DANH_MUC).forEach(key => {
+    DEFAULT_DANH_MUC[key].forEach((val, idx) => {
+      rows.push([key, val, true, idx + 1, '']);
+    });
+  });
+  if (rows.length) sheet.getRange(2, 1, rows.length, 5).setValues(rows);
+  return sheet;
+}
+
+// ===== DỮ LIỆU GẦN NHẤT =====
+function getRecentRows() {
+  const sheet = getSheet(SL_SHEET);
+  const lastRow = sheet.getLastRow();
+  const startRow = Math.max(5, lastRow - 19);
   const numRows = lastRow - startRow + 1;
 
-  if (numRows <= 0) {
-    return ContentService
-      .createTextOutput(JSON.stringify([]))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
+  if (numRows <= 0) return json([]);
 
   const data = sheet.getRange(startRow, 1, numRows, 24).getValues();
-  const headers = ['nam','thang_vh','kl','khu_vuc','date','xe','container','mtc',
-                   'delta_ncc','cong_ty','loai_hang','noi_di','noi_den','nghiep_vu',
-                   'cuoc','phu_phi','ghi_chu','job_id','lenh_vc','lai_xe',
-                   'thang_hd','ghi_chu_nb','phan_loai','nam_hd'];
+  const result = data.reverse().map(row => Object.fromEntries(SL_HEADERS.map((h, i) => [h, row[i]])));
+  return json(result);
+}
 
-  const result = data.reverse().map(row =>
-    Object.fromEntries(headers.map((h, i) => [h, row[i]]))
-  );
+function getSheet(name) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sh = ss.getSheetByName(name);
+  if (!sh) throw new Error(`Không tìm thấy sheet: ${name}`);
+  return sh;
+}
 
-  return ContentService
-    .createTextOutput(JSON.stringify(result))
-    .setMimeType(ContentService.MimeType.JSON);
+function safe(v) {
+  return v === undefined || v === null ? '' : v;
 }

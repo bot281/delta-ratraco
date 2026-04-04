@@ -9,23 +9,30 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbzNHBYiWFBmu7gJ85lhM_g3
 
 // ===== DANH MỤC =====
 let DANH_MUC = {};
+const FALLBACK_DANH_MUC = {
+  khu_vuc: ['Đông Anh','Sóng Thần','Trảng Bom','Bình Minh','Cây Cầy','KA'],
+  xe: ['29H-984.14','15C-263.69','29E-104.07'],
+  lai_xe: ['Vũ Văn Ngọc','Nguyễn Tiến Nam'],
+  nghiep_vu: ['Đóng hàng','Trả hàng','Kết hợp','Tăng bo'],
+  phan_loai: ['Chở hàng','Chuyển vỏ'],
+  loai_hang: ['Sữa','Bia','Giấy','Thực phẩm','Khác'],
+  noi_di: ['Ga Đông Anh','Tiên Sơn','Yên Phong','Khác'],
+  noi_den: ['Bãi ga Đông Anh','ICD Sóng Thần','Yên Phong','Khác']
+};
 
 async function loadDanhMuc() {
   try {
-    const resp = await fetch('../data/master/danh-muc.json');
-    DANH_MUC = await resp.json();
+    const resp = await fetch(`${GAS_URL}?action=config`);
+    if (!resp.ok) throw new Error('Config API lỗi');
+    const data = await resp.json();
+    DANH_MUC = data?.danh_muc || FALLBACK_DANH_MUC;
   } catch {
-    // fallback khi chạy local không có server
-    DANH_MUC = {
-      khu_vuc: ['Đông Anh','Sóng Thần','Trảng Bom','Bình Minh','Cây Cầy','KA'],
-      xe: ['29H-984.14','15C-263.69','29E-104.07'],
-      lai_xe: ['Vũ Văn Ngọc','Nguyễn Tiến Nam'],
-      nghiep_vu: ['Đóng hàng','Trả hàng','Kết hợp','Tăng bo'],
-      phan_loai: ['Chở hàng','Chuyển vỏ'],
-      loai_hang: ['Sữa','Bia','Giấy','Thực phẩm','Khác'],
-      noi_di: ['Ga Đông Anh','Tiên Sơn','Yên Phong','Khác'],
-      noi_den: ['Bãi ga Đông Anh','ICD Sóng Thần','Yên Phong','Khác']
-    };
+    try {
+      const resp = await fetch('../data/master/danh-muc.json');
+      DANH_MUC = await resp.json();
+    } catch {
+      DANH_MUC = FALLBACK_DANH_MUC;
+    }
   }
   populateDropdowns();
 }
@@ -44,6 +51,8 @@ function populateDropdowns() {
   for (const [key, id] of Object.entries(map)) {
     const sel = document.getElementById(id);
     if (!sel || !DANH_MUC[key]) continue;
+    const firstOption = sel.querySelector('option')?.outerHTML || '<option value="">— Chọn —</option>';
+    sel.innerHTML = firstOption;
     DANH_MUC[key].forEach(val => {
       const opt = document.createElement('option');
       opt.value = val;
@@ -68,13 +77,58 @@ function initForm() {
     });
   });
 
-  // Auto uppercase container
+  // Auto uppercase
   document.getElementById('container').addEventListener('input', function() {
     this.value = this.value.toUpperCase();
   });
+  document.getElementById('mtc').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
+  });
+
+  // Load trip theo MTC
+  document.getElementById('loadTripBtn').addEventListener('click', loadTripByMTC);
 
   // Submit
   document.getElementById('slForm').addEventListener('submit', handleSubmit);
+}
+
+async function loadTripByMTC() {
+  const mtc = val('mtc');
+  if (!mtc) {
+    showStatus('⚠️ Nhập MTC trước khi gọi trip', 'error');
+    return;
+  }
+  showStatus(`🔎 Đang tìm trip MTC: ${mtc}...`, 'loading');
+  try {
+    const resp = await fetch(`${GAS_URL}?action=trip&mtc=${encodeURIComponent(mtc)}`);
+    if (!resp.ok) throw new Error('Không gọi được API trip');
+    const data = await resp.json();
+    if (!data?.found) {
+      showStatus(`ℹ️ Chưa có trip MTC ${mtc}. Em sẽ tạo mới khi lưu.`, 'loading');
+      return;
+    }
+    fillFormFromTrip(data.trip || {});
+    showStatus(`✅ Đã nạp trip MTC ${mtc}. Chị chỉnh thêm rồi bấm Lưu.`, 'success');
+  } catch (err) {
+    showStatus(`❌ Không tải được trip theo MTC: ${err.message}`, 'error');
+  }
+}
+
+function fillFormFromTrip(trip) {
+  const map = [
+    'khu_vuc','xe','container','mtc','delta_ncc','loai_hang','noi_di','noi_den',
+    'nghiep_vu','cuoc','phu_phi','ghi_chu','job_id','lenh_vc','lai_xe','thang_hd','phan_loai'
+  ];
+  map.forEach(key => {
+    const el = document.getElementById(key);
+    if (!el) return;
+    const v = trip[key];
+    if (v !== undefined && v !== null && `${v}` !== '') el.value = `${v}`;
+  });
+  if (trip.date) {
+    const iso = toISODate(trip.date);
+    if (iso) document.getElementById('date').value = iso;
+  }
 }
 
 async function handleSubmit(e) {
@@ -89,23 +143,19 @@ async function handleSubmit(e) {
   const payload = collectFormData();
 
   try {
-    const resp = await fetch(GAS_URL, {
+    await fetch(GAS_URL, {
       method: 'POST',
-      mode: 'no-cors', // Apps Script yêu cầu no-cors
+      mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
-    // no-cors không đọc được response → lưu local và thông báo
     saveToLocalHistory(payload);
     renderRecentList();
 
-    showStatus(`✅ Đã lưu chuyến: ${payload.xe} | ${payload.noi_di} → ${payload.noi_den} | ${formatMoney(payload.cuoc)}`, 'success');
-    document.getElementById('slForm').reset();
-    document.getElementById('date').value = new Date().toISOString().split('T')[0];
-
+    showStatus(`✅ Đã lưu trip MTC ${payload.mtc}: ${payload.noi_di} → ${payload.noi_den}`, 'success');
   } catch (err) {
-    showStatus(`❌ Lỗi kết nối: ${err.message}. Dữ liệu đã được lưu tạm cục bộ.`, 'error');
+    showStatus(`❌ Lỗi kết nối: ${err.message}. Dữ liệu đã lưu tạm cục bộ.`, 'error');
     saveToLocalHistory(payload);
     renderRecentList();
   } finally {
@@ -131,8 +181,8 @@ function collectFormData() {
     noi_di: val('noi_di'),
     noi_den: val('noi_den'),
     nghiep_vu: val('nghiep_vu'),
-    cuoc: parseFloat(val('cuoc') || 0),
-    phu_phi: parseFloat(val('phu_phi') || 0),
+    cuoc: val('cuoc') === '' ? '' : parseFloat(val('cuoc')),
+    phu_phi: val('phu_phi') === '' ? '' : parseFloat(val('phu_phi')),
     ghi_chu: val('ghi_chu'),
     job_id: val('job_id'),
     lenh_vc: val('lenh_vc'),
@@ -217,6 +267,13 @@ function formatDateVN(isoDate) {
   if (!isoDate) return '';
   const [y, m, d] = isoDate.split('-');
   return `${d}/${m}/${y}`;
+}
+
+function toISODate(vnDate) {
+  if (!vnDate || !vnDate.includes('/')) return '';
+  const [d, m, y] = vnDate.split('/');
+  if (!d || !m || !y) return '';
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
 // ===== INIT =====
