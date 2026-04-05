@@ -3,19 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Delta Ratraco — Nhập Shipment List</title>
+  <title>Delta Trip Record — Nhập chuyến vận chuyển</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header>
-    <div class="logo">🚚 Delta Ratraco</div>
-    <div class="user-info" id="userInfo">Chưa đăng nhập</div>
+    <div class="logo">🚚 Delta Trip Record</div>
+    <div class="user-info" id="userInfo">Delta Team1</div>
   </header>
 
   <main>
     <div class="card">
-      <h2>📋 Nhập chuyến vận chuyển mới</h2>
+      <h2>📋 Khai báo chuyến vận chuyển</h2>
       <form id="slForm" novalidate>
+
+        <!-- ROW 0: Người khai báo -->
+        <div class="form-row">
+          <div class="form-group required" style="grid-column: 1 / -1;">
+            <label>👤 Người khai báo</label>
+            <select id="nguoi_khai" name="nguoi_khai" required>
+              <option value="">— Chọn người khai —</option>
+            </select>
+          </div>
+        </div>
 
         <!-- ROW 1: Ngày + Khu vực -->
         <div class="form-row">
@@ -63,7 +73,7 @@
               <button type="button" class="btn-mini" id="loadTripBtn">🔎 Gọi trip</button>
             </div>
             <div class="inline-actions" style="margin-top:6px;grid-template-columns:1fr auto;">
-              <small class="hint">Trip mới: để trống MTC hoặc bấm Tạo MTC</small>
+              <small class="hint">Trip mới: để trống hoặc bấm Tạo MTC</small>
               <button type="button" class="btn-mini" id="genMtcBtn">✨ Tạo MTC</button>
             </div>
           </div>
@@ -101,26 +111,27 @@
           </div>
         </div>
 
-        <!-- ROW 6: JOB ID + Lệnh VC -->
+        <!-- ROW 6: JOB ID (không bắt buộc) + Phân loại -->
         <div class="form-row">
-          <div class="form-group required">
-            <label>JOB ID</label>
-            <input type="text" id="job_id" name="job_id"
-                   placeholder="VD: SVT25030138800015" required />
-          </div>
           <div class="form-group">
-            <label>Lệnh VC</label>
-            <input type="text" id="lenh_vc" name="lenh_vc"
-                   placeholder="VD: FCL-20250327155216057" />
+            <label>JOB ID <span class="optional">(bổ sung sau được)</span></label>
+            <input type="text" id="job_id" name="job_id"
+                   placeholder="VD: SVT25030138800015" />
+          </div>
+          <div class="form-group required">
+            <label>Phân loại</label>
+            <select id="phan_loai" name="phan_loai" required>
+              <option value="">— Chọn —</option>
+            </select>
           </div>
         </div>
 
-        <!-- ROW 7: Cước + Phụ phí -->
+        <!-- ROW 7: Cước (không bắt buộc) + Phụ phí -->
         <div class="form-row">
-          <div class="form-group required">
-            <label>Cước vận chuyển (VNĐ)</label>
+          <div class="form-group">
+            <label>Cước vận chuyển (VNĐ) <span class="optional">(bổ sung sau được)</span></label>
             <input type="number" id="cuoc" name="cuoc"
-                   placeholder="0" min="0" step="1000" required />
+                   placeholder="0" min="0" step="1000" />
           </div>
           <div class="form-group">
             <label>Phụ phí (VNĐ)</label>
@@ -129,29 +140,23 @@
           </div>
         </div>
 
-        <!-- ROW 8: Phân loại + Delta/NCC -->
+        <!-- ROW 8: Delta/NCC + Tháng HD -->
         <div class="form-row">
-          <div class="form-group required">
-            <label>Phân loại</label>
-            <select id="phan_loai" name="phan_loai" required>
-              <option value="">— Chọn —</option>
-            </select>
-          </div>
           <div class="form-group">
             <label>Delta / NCC</label>
             <input type="text" id="delta_ncc" name="delta_ncc"
                    placeholder="VD: LogisValley" />
           </div>
-        </div>
-
-        <!-- ROW 9: Tháng HD + Ghi chú -->
-        <div class="form-row">
           <div class="form-group">
             <label>Tháng hóa đơn</label>
             <input type="number" id="thang_hd" name="thang_hd"
                    min="1" max="12" placeholder="(mặc định = tháng VH)" />
           </div>
-          <div class="form-group">
+        </div>
+
+        <!-- ROW 9: Ghi chú -->
+        <div class="form-row">
+          <div class="form-group" style="grid-column: 1 / -1;">
             <label>Ghi chú</label>
             <input type="text" id="ghi_chu" name="ghi_chu"
                    placeholder="Ghi chú thêm nếu có" />
@@ -160,7 +165,7 @@
 
         <div class="form-actions">
           <button type="submit" class="btn-primary" id="submitBtn">
-            ✅ Lưu chuyến vận chuyển
+            ✅ Lưu chuyến
           </button>
           <button type="reset" class="btn-secondary">🔄 Nhập lại</button>
         </div>
