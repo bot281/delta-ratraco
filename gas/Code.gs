@@ -215,10 +215,36 @@ function generateNextMTCFromVals(hVals) {
   return `${prefix}${String(info.max + 1).padStart(info.width, '0')}`;
 }
 
+function parseISODate(dateStr) {
+  // Nhận vào "YYYY-MM-DD" → trả về Date object đúng ngày (tránh nhầm MM/DD)
+  if (!dateStr) return '';
+  const s = String(dateStr);
+  // ISO: 2026-04-05
+  const mISO = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (mISO) return new Date(Number(mISO[1]), Number(mISO[2]) - 1, Number(mISO[3]));
+  // DD/MM/YYYY (legacy)
+  const mVN = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (mVN) return new Date(Number(mVN[3]), Number(mVN[2]) - 1, Number(mVN[1]));
+  return s; // trả về string nếu không parse được
+}
+
+function getMonthFromDate(dateStr) {
+  if (!dateStr) return '';
+  const s = String(dateStr);
+  const mISO = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (mISO) return Number(mISO[2]);
+  const mVN = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (mVN) return Number(mVN[2]);
+  return '';
+}
+
 function buildRowData(data) {
+  // thang_vh tự suy từ date nếu không được cung cấp
+  const thangVH = safe(data.thang_vh) || getMonthFromDate(data.date);
+  const namVH   = safe(data.nam) || (data.date ? Number(String(data.date).slice(0,4)) : '');
   return [
-    safe(data.nam), safe(data.thang_vh), 1,
-    safe(data.khu_vuc), safe(data.date), safe(data.xe),
+    namVH, thangVH, 1,
+    safe(data.khu_vuc), parseISODate(data.date), safe(data.xe),
     safe(data.container), safe(data.mtc), safe(data.delta_ncc), safe(data.cong_ty),
     safe(data.loai_hang), safe(data.noi_di), safe(data.noi_den),
     safe(data.nghiep_vu), safe(data.cuoc), safe(data.phu_phi),

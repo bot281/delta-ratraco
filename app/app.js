@@ -122,6 +122,7 @@ function fillFormFromTrip(trip) {
     if (v !== undefined && v !== null && `${v}` !== '') el.value = `${v}`;
   });
   if (trip.date) {
+    // Hỗ trợ cả ISO string, ISO timestamp, dd/mm/yyyy
     const iso = toISODate(trip.date);
     if (iso) document.getElementById('date').value = iso;
   }
@@ -167,7 +168,7 @@ function collectFormData() {
     nam: year,
     thang_vh: month,
     khu_vuc: val('khu_vuc'),
-    date: formatDateVN(date),
+    date: date,          // ISO YYYY-MM-DD — không đổi format, tránh nhầm tháng/ngày
     xe: val('xe'),
     container: val('container'),
     mtc: val('mtc'),
