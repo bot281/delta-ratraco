@@ -111,18 +111,32 @@
           </div>
         </div>
 
-        <!-- ROW 6: JOB ID (không bắt buộc) + Phân loại -->
+        <!-- ROW 6: Công ty + JOB ID -->
         <div class="form-row">
+          <div class="form-group">
+            <label>Công ty</label>
+            <input type="text" id="cong_ty" name="cong_ty"
+                   placeholder="VD: Vinamilk, Masan..." />
+          </div>
           <div class="form-group">
             <label>JOB ID <span class="optional">(bổ sung sau được)</span></label>
             <input type="text" id="job_id" name="job_id"
                    placeholder="VD: SVT25030138800015" />
           </div>
+        </div>
+
+        <!-- ROW 6b: Phân loại -->
+        <div class="form-row">
           <div class="form-group required">
             <label>Phân loại</label>
             <select id="phan_loai" name="phan_loai" required>
               <option value="">— Chọn —</option>
             </select>
+          </div>
+          <div class="form-group">
+            <label>Delta / NCC</label>
+            <input type="text" id="delta_ncc" name="delta_ncc"
+                   placeholder="VD: LogisValley" />
           </div>
         </div>
 
@@ -140,13 +154,8 @@
           </div>
         </div>
 
-        <!-- ROW 8: Delta/NCC + Tháng HD -->
+        <!-- ROW 8: Tháng HD + Ghi chú -->
         <div class="form-row">
-          <div class="form-group">
-            <label>Delta / NCC</label>
-            <input type="text" id="delta_ncc" name="delta_ncc"
-                   placeholder="VD: LogisValley" />
-          </div>
           <div class="form-group">
             <label>Tháng hóa đơn</label>
             <input type="number" id="thang_hd" name="thang_hd"

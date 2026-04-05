@@ -111,42 +111,32 @@ function findRowByMTC(sheet, mtc) {
   return lastMatchRow;
 }
 
-// ===== SINH MTC TỰ ĐỘNG =====
+// ===== SINH MTC TỰ ĐỘNG (standalone — dùng khi gọi riêng endpoint next_mtc) =====
 function generateNextMTC() {
   const sheet = getSheet(SL_SHEET);
   const lastRow = sheet.getLastRow();
   if (lastRow < SL_DATA_START_ROW) return 'RTC01';
-
-  const scanRows = Math.min(2000, lastRow - SL_DATA_START_ROW + 1);
-  const startScan = lastRow - scanRows + 1;
-  const vals = sheet.getRange(startScan, SL_MTC_COL, scanRows, 1).getValues().flat();
-
-  const stats = {};
-  vals.forEach(v => {
-    const m = String(v || '').trim().match(/^([A-Za-z]+)(\d+)$/);
-    if (!m) return;
-    const prefix = m[1].toUpperCase(), num = Number(m[2]), width = m[2].length;
-    if (!stats[prefix]) stats[prefix] = { count: 0, max: 0, width };
-    stats[prefix].count++;
-    if (num > stats[prefix].max) stats[prefix].max = num;
-    if (width > stats[prefix].width) stats[prefix].width = width;
-  });
-
-  if (!Object.keys(stats).length) return 'RTC01';
-  const [prefix, info] = Object.entries(stats).sort((a,b) =>
-    b[1].count !== a[1].count ? b[1].count - a[1].count : b[1].max - a[1].max)[0];
-  return `${prefix}${String(info.max + 1).padStart(info.width, '0')}`;
+  const vals = sheet.getRange(SL_DATA_START_ROW, SL_MTC_COL, lastRow - SL_DATA_START_ROW + 1, 1).getValues().flat();
+  return generateNextMTCFromVals(vals);
 }
 
 // ===== TRIP UPSERT THEO MTC =====
 function upsertTripByMTC(data) {
+  const sheet = getSheet(SL_SHEET);
+
+  // Đọc toàn bộ cột H MỘT LẦN — dùng cho cả lookup, next_mtc, và last data row
+  const lastSheetRow = sheet.getLastRow();
+  const hVals = lastSheetRow >= SL_DATA_START_ROW
+    ? sheet.getRange(SL_DATA_START_ROW, SL_MTC_COL, lastSheetRow - SL_DATA_START_ROW + 1, 1).getValues().flat()
+    : [];
+
   let mtc = String(data.mtc || '').trim();
   if (!mtc) {
-    mtc = generateNextMTC();
+    mtc = generateNextMTCFromVals(hVals);
     data.mtc = mtc;
   }
 
-  // Validate nguoi_khai nếu có trong danh sách config
+  // Validate nguoi_khai
   const nguoiKhai = String(data.nguoi_khai || '').trim();
   if (nguoiKhai) {
     const dm = getConfigDanhMuc();
@@ -156,33 +146,80 @@ function upsertTripByMTC(data) {
     }
   }
 
-  const sheet = getSheet(SL_SHEET);
   const incoming = buildRowData(data);
-  const foundRow = findRowByMTC(sheet, mtc);
+
+  // Tìm row hiện có theo MTC
+  const search = mtc.toUpperCase().trim();
+  let foundRow = null;
+  for (let i = hVals.length - 1; i >= 0; i--) {
+    if (String(hVals[i] || '').trim().toUpperCase() === search) {
+      foundRow = i + SL_DATA_START_ROW;
+      break;
+    }
+  }
 
   if (foundRow) {
     const oldRow = sheet.getRange(foundRow, 1, 1, SL_TOTAL_COLS).getValues()[0];
-    // Xử lý đặc biệt nguoi_khai: append tên mới
     const merged = mergeRow(oldRow, incoming);
-    if (nguoiKhai && oldRow[24]) {
-      const existing = String(oldRow[24]).trim();
-      const names = existing.split(' ,').map(s => s.trim()).filter(Boolean);
+
+    // Xử lý nguoi_khai: ghép nhiều tên với " ,"
+    if (nguoiKhai) {
+      const names = String(oldRow[24] || '').split(' ,').map(s => s.trim()).filter(Boolean);
       if (!names.includes(nguoiKhai)) names.push(nguoiKhai);
       merged[24] = names.join(' ,');
     }
-    sheet.getRange(foundRow, 1, 1, SL_TOTAL_COLS).setValues([merged]);
+
+    // Chỉ update các cột thay đổi để tránh bị block bởi data validation ở cột không liên quan
+    for (let i = 0; i < SL_TOTAL_COLS; i++) {
+      const oldVal = String(oldRow[i] ?? '');
+      const newVal = String(merged[i] ?? '');
+      if (oldVal !== newVal) {
+        sheet.getRange(foundRow, i + 1).setValue(merged[i]);
+      }
+    }
     return { action: 'updated', row: foundRow, mtc };
   }
 
-  sheet.appendRow(incoming);
-  return { action: 'created', row: sheet.getLastRow(), mtc };
+  // Tìm row data cuối thực sự (last non-empty value trong cột H)
+  let lastDataRow = SL_DATA_START_ROW - 1;
+  for (let i = hVals.length - 1; i >= 0; i--) {
+    if (String(hVals[i] || '').trim()) { lastDataRow = i + SL_DATA_START_ROW; break; }
+  }
+  const insertRow = lastDataRow + 1;
+
+  // Ghi từng cell (giống update) để bypass data validation cũ trong sheet
+  for (let i = 0; i < SL_TOTAL_COLS; i++) {
+    const v = incoming[i];
+    if (v !== '' && v !== null && v !== undefined) {
+      sheet.getRange(insertRow, i + 1).setValue(v);
+    }
+  }
+  return { action: 'created', row: insertRow, mtc };
+}
+
+// Tách riêng để dùng từ doGet (next_mtc endpoint)
+function generateNextMTCFromVals(hVals) {
+  const stats = {};
+  hVals.forEach(v => {
+    const m = String(v || '').trim().match(/^([A-Za-z]+)(\d+)$/);
+    if (!m) return;
+    const prefix = m[1].toUpperCase(), num = Number(m[2]), width = m[2].length;
+    if (!stats[prefix]) stats[prefix] = { count: 0, max: 0, width };
+    stats[prefix].count++;
+    if (num > stats[prefix].max) stats[prefix].max = num;
+    if (width > stats[prefix].width) stats[prefix].width = width;
+  });
+  if (!Object.keys(stats).length) return 'RTC01';
+  const [prefix, info] = Object.entries(stats).sort((a,b) =>
+    b[1].count !== a[1].count ? b[1].count - a[1].count : b[1].max - a[1].max)[0];
+  return `${prefix}${String(info.max + 1).padStart(info.width, '0')}`;
 }
 
 function buildRowData(data) {
   return [
     safe(data.nam), safe(data.thang_vh), 1,
     safe(data.khu_vuc), safe(data.date), safe(data.xe),
-    safe(data.container), safe(data.mtc), safe(data.delta_ncc), '',
+    safe(data.container), safe(data.mtc), safe(data.delta_ncc), safe(data.cong_ty),
     safe(data.loai_hang), safe(data.noi_di), safe(data.noi_den),
     safe(data.nghiep_vu), safe(data.cuoc), safe(data.phu_phi),
     safe(data.ghi_chu), safe(data.job_id),

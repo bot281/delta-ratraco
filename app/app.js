@@ -112,7 +112,7 @@ async function loadTripByMTC() {
 function fillFormFromTrip(trip) {
   const FIELDS = [
     'nguoi_khai','khu_vuc','xe','container','mtc','delta_ncc',
-    'loai_hang','noi_di','noi_den','nghiep_vu',
+    'cong_ty','loai_hang','noi_di','noi_den','nghiep_vu',
     'cuoc','phu_phi','ghi_chu','job_id','lai_xe','thang_hd','phan_loai'
   ];
   FIELDS.forEach(key => {
@@ -172,6 +172,7 @@ function collectFormData() {
     container: val('container'),
     mtc: val('mtc'),
     delta_ncc: val('delta_ncc'),
+    cong_ty: val('cong_ty'),
     loai_hang: val('loai_hang'),
     noi_di: val('noi_di'),
     noi_den: val('noi_den'),
