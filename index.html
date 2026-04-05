@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delta Trip Record — Nhập chuyến vận chuyển</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="logo">🚚 Delta Trip Record</div>
+    <div class="user-info" id="userInfo">Delta Team1</div>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>📋 Khai báo chuyến vận chuyển</h2>
+      <form id="slForm" novalidate>
+
+        <!-- ROW 0: Người khai báo -->
+        <div class="form-row">
+          <div class="form-group required" style="grid-column: 1 / -1;">
+            <label>👤 Người khai báo</label>
+            <select id="nguoi_khai" name="nguoi_khai" required>
+              <option value="">— Chọn người khai —</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ROW 1: Ngày + Khu vực -->
+        <div class="form-row">
+          <div class="form-group required">
+            <label>Ngày vận hành</label>
+            <input type="date" id="date" name="date" required />
+          </div>
+          <div class="form-group required">
+            <label>Khu vực</label>
+            <select id="khu_vuc" name="khu_vuc" required>
+              <option value="">— Chọn khu vực —</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ROW 2: Xe + Lái xe -->
+        <div class="form-row">
+          <div class="form-group required">
+            <label>Xe thực hiện</label>
+            <select id="xe" name="xe" required>
+              <option value="">— Chọn xe —</option>
+            </select>
+          </div>
+          <div class="form-group required">
+            <label>Lái xe</label>
+            <select id="lai_xe" name="lai_xe" required>
+              <option value="">— Chọn lái xe —</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ROW 3: Số Container + MTC -->
+        <div class="form-row">
+          <div class="form-group required">
+            <label>Số Container</label>
+            <input type="text" id="container" name="container"
+                   placeholder="VD: RATU1000807" required
+                   style="text-transform:uppercase" />
+          </div>
+          <div class="form-group">
+            <label>MTC (mã trip)</label>
+            <div class="inline-actions">
+              <input type="text" id="mtc" name="mtc"
+                     placeholder="Tự sinh nếu để trống" />
+              <button type="button" class="btn-mini" id="loadTripBtn">🔎 Gọi trip</button>
+            </div>
+            <div class="inline-actions" style="margin-top:6px;grid-template-columns:1fr auto;">
+              <small class="hint">Trip mới: để trống hoặc bấm Tạo MTC</small>
+              <button type="button" class="btn-mini" id="genMtcBtn">✨ Tạo MTC</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ROW 4: Nơi đi + Nơi đến -->
+        <div class="form-row">
+          <div class="form-group required">
+            <label>Nơi đi</label>
+            <select id="noi_di" name="noi_di" required>
+              <option value="">— Chọn nơi đi —</option>
+            </select>
+          </div>
+          <div class="form-group required">
+            <label>Nơi đến</label>
+            <select id="noi_den" name="noi_den" required>
+              <option value="">— Chọn nơi đến —</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ROW 5: Loại hàng + Nghiệp vụ -->
+        <div class="form-row">
+          <div class="form-group required">
+            <label>Loại hàng</label>
+            <select id="loai_hang" name="loai_hang" required>
+              <option value="">— Chọn loại hàng —</option>
+            </select>
+          </div>
+          <div class="form-group required">
+            <label>Nghiệp vụ</label>
+            <select id="nghiep_vu" name="nghiep_vu" required>
+              <option value="">— Chọn nghiệp vụ —</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ROW 6: JOB ID (không bắt buộc) + Phân loại -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>JOB ID <span class="optional">(bổ sung sau được)</span></label>
+            <input type="text" id="job_id" name="job_id"
+                   placeholder="VD: SVT25030138800015" />
+          </div>
+          <div class="form-group required">
+            <label>Phân loại</label>
+            <select id="phan_loai" name="phan_loai" required>
+              <option value="">— Chọn —</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ROW 7: Cước (không bắt buộc) + Phụ phí -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cước vận chuyển (VNĐ) <span class="optional">(bổ sung sau được)</span></label>
+            <input type="number" id="cuoc" name="cuoc"
+                   placeholder="0" min="0" step="1000" />
+          </div>
+          <div class="form-group">
+            <label>Phụ phí (VNĐ)</label>
+            <input type="number" id="phu_phi" name="phu_phi"
+                   placeholder="0" min="0" step="1000" />
+          </div>
+        </div>
+
+        <!-- ROW 8: Delta/NCC + Tháng HD -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Delta / NCC</label>
+            <input type="text" id="delta_ncc" name="delta_ncc"
+                   placeholder="VD: LogisValley" />
+          </div>
+          <div class="form-group">
+            <label>Tháng hóa đơn</label>
+            <input type="number" id="thang_hd" name="thang_hd"
+                   min="1" max="12" placeholder="(mặc định = tháng VH)" />
+          </div>
+        </div>
+
+        <!-- ROW 9: Ghi chú -->
+        <div class="form-row">
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label>Ghi chú</label>
+            <input type="text" id="ghi_chu" name="ghi_chu"
+                   placeholder="Ghi chú thêm nếu có" />
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" id="submitBtn">
+            ✅ Lưu chuyến
+          </button>
+          <button type="reset" class="btn-secondary">🔄 Nhập lại</button>
+        </div>
+
+        <div id="statusMsg" class="status-msg hidden"></div>
+      </form>
+    </div>
+
+    <!-- Lịch sử nhập gần nhất -->
+    <div class="card">
+      <h2>📜 Chuyến vừa nhập (hôm nay)</h2>
+      <div id="recentList" class="recent-list">
+        <p class="empty-text">Chưa có dữ liệu hôm nay...</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
