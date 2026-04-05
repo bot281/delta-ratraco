@@ -238,12 +238,23 @@ function getMonthFromDate(dateStr) {
   return '';
 }
 
+function getDayFromDate(dateStr) {
+  if (!dateStr) return '';
+  const s = String(dateStr);
+  const mISO = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (mISO) return Number(mISO[3]);
+  const mVN = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (mVN) return Number(mVN[1]);
+  return '';
+}
+
 function buildRowData(data) {
   // thang_vh tự suy từ date nếu không được cung cấp
   const thangVH = safe(data.thang_vh) || getMonthFromDate(data.date);
-  const namVH   = safe(data.nam) || (data.date ? Number(String(data.date).slice(0,4)) : '');
+  const ngayVH  = safe(data.ngay)     || getDayFromDate(data.date);
+  const namVH   = safe(data.nam)      || (data.date ? Number(String(data.date).slice(0,4)) : '');
   return [
-    namVH, thangVH, 1,
+    namVH, thangVH, ngayVH,
     safe(data.khu_vuc), parseISODate(data.date), safe(data.xe),
     safe(data.container), safe(data.mtc), safe(data.delta_ncc), safe(data.cong_ty),
     safe(data.loai_hang), safe(data.noi_di), safe(data.noi_den),
