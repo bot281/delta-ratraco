@@ -205,3 +205,31 @@ input[type="number"] { -moz-appearance: textfield; }
 @media (max-width: 580px) {
   .recent-item { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; }
 }
+
+/* ===== TOM SELECT (autocomplete) — match form style ===== */
+.ts-wrapper.single .ts-control,
+.ts-wrapper.multi .ts-control {
+  border: 1.5px solid #d0d9e8;
+  border-radius: 8px;
+  background: #fafbfc;
+  padding: 8px 13px;
+  font-size: 0.93rem;
+  color: #1a1a2e;
+  min-height: 42px;
+  box-shadow: none;
+}
+.ts-wrapper.focus .ts-control {
+  border-color: #2d6a9f;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(45,106,159,0.12);
+}
+.ts-wrapper.error .ts-control,
+select.error + .ts-wrapper .ts-control { border-color: #e74c3c; }
+.ts-dropdown {
+  border: 1.5px solid #d0d9e8;
+  border-radius: 8px;
+  margin-top: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.ts-dropdown .active { background: #eef6ff; color: #1e3a5f; }
+.ts-dropdown .option { padding: 8px 13px; }

@@ -31,6 +31,9 @@ async function loadDanhMuc() {
   populateDropdowns();
 }
 
+// Các trường có ô tìm kiếm (gõ keyword để lọc nhanh)
+const SEARCHABLE_IDS = ['nguoi_khai','xe','lai_xe','noi_di','noi_den','loai_hang'];
+
 function populateDropdowns() {
   const DROPDOWN_IDS = [
     'nguoi_khai','khu_vuc','xe','lai_xe',
@@ -46,6 +49,37 @@ function populateDropdowns() {
       opt.value = v; opt.textContent = v;
       sel.appendChild(opt);
     });
+  }
+  attachSearchable();
+}
+
+function attachSearchable() {
+  if (typeof TomSelect === 'undefined') return; // CDN chưa load — fallback native select
+  for (const id of SEARCHABLE_IDS) {
+    const sel = document.getElementById(id);
+    if (!sel || sel.tomselect) continue;
+    new TomSelect(sel, {
+      create: false,
+      allowEmptyOption: true,
+      maxOptions: 500,
+      placeholder: sel.querySelector('option')?.textContent || 'Gõ để tìm...',
+      // diacritic-insensitive search by default in Tom Select 2.x
+      // → gõ "trang" hoặc "Trảng" đều tìm được "Trảng Bom", "Trảng Bàng"
+    });
+  }
+}
+
+function setFieldValue(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (el.tomselect) el.tomselect.setValue(value, true);
+  else el.value = value;
+}
+
+function clearSearchable() {
+  for (const id of SEARCHABLE_IDS) {
+    const sel = document.getElementById(id);
+    if (sel?.tomselect) sel.tomselect.clear(true);
   }
 }
 
@@ -75,7 +109,10 @@ function initForm() {
 
   document.getElementById('slForm').addEventListener('submit', handleSubmit);
   document.getElementById('slForm').addEventListener('reset', () => {
-    setTimeout(() => { suggestNextMTC(false); }, 0);
+    setTimeout(() => {
+      clearSearchable();
+      suggestNextMTC(false);
+    }, 0);
   });
 }
 
@@ -119,7 +156,7 @@ function fillFormFromTrip(trip) {
     const el = document.getElementById(key);
     if (!el) return;
     const v = trip[key];
-    if (v !== undefined && v !== null && `${v}` !== '') el.value = `${v}`;
+    if (v !== undefined && v !== null && `${v}` !== '') setFieldValue(key, `${v}`);
   });
   if (trip.date) {
     // Hỗ trợ cả ISO string, ISO timestamp, dd/mm/yyyy
@@ -203,7 +240,12 @@ function validateForm() {
     const el = document.getElementById(id);
     if (!el) return;
     el.classList.remove('error');
-    if (!el.value.trim()) { el.classList.add('error'); ok = false; }
+    el.tomselect?.wrapper.classList.remove('error');
+    if (!el.value.trim()) {
+      el.classList.add('error');
+      el.tomselect?.wrapper.classList.add('error');
+      ok = false;
+    }
   });
   if (!ok) showStatus('⚠️ Vui lòng điền đầy đủ các trường bắt buộc (*)', 'error');
   return ok;
